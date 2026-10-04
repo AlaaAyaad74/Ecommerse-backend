@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(100)
+  email     String    @unique @db.VarChar(150)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  products  Product[] 
+  orders    Order[]   
+
+  @@map("users")
+}
+
+model Product {
+  id          Int         @id @default(autoincrement())
+  name        String      @db.VarChar(150)
+  description String?
+  price       Decimal     @db.Decimal(10, 2)
+  stock       Int         @default(0)
+  sellerId    Int         @map("seller_id")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  seller      User        @relation(fields: [sellerId], references: [id])
+  orderItems  OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id        Int         @id @default(autoincrement())
+  userId    Int         @map("user_id")
+  status    String      @default("pending") @db.VarChar(20)
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  user      User        @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int     @map("order_id")
+  productId Int     @map("product_id")
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
+
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([orderId, productId])
+  @@map("order_items")
+}
